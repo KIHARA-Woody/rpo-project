@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RPOモデル比較 図解</title>
+  <style>
+    :root{
+      --bg:#0b1020;
+      --panel:#0f1833;
+      --card:#101a3a;
+      --card2:#0f1732;
+      --line:rgba(255,255,255,.12);
+      --line2:rgba(255,255,255,.18);
+      --text:rgba(255,255,255,.92);
+      --muted:rgba(255,255,255,.68);
+
+      --good:#39d98a;
+      --warn:#ffcc66;
+      --bad:#ff6b6b;
+
+      --blue:#5ea9ff;
+      --purple:#b48cff;
+      --cyan:#45e6ff;
+
+      --shadow:0 18px 60px rgba(0,0,0,.45);
+      --shadow2:0 10px 25px rgba(0,0,0,.35);
+      --r:18px;
+      --r2:14px;
+      --pad:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:var(--sans);
+      color:var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% -10%, rgba(94,169,255,.35), transparent 60%),
+        radial-gradient(1000px 800px at 90% 10%, rgba(180,140,255,.28), transparent 60%),
+        radial-gradient(1200px 800px at 55% 110%, rgba(69,230,255,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg), #070a14 70%);
+      min-height:100vh;
+      padding:28px 18px 40px;
+    }
+
+    .wrap{max-width:1200px;margin:0 auto}
+    header{
+      display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;
+      margin-bottom:18px;
+    }
+    .title{
+      display:flex;flex-direction:column;gap:8px;
+    }
+    .title h1{
+      margin:0;
+      font-size: clamp(22px, 3vw, 34px);
+      letter-spacing:.02em;
+      line-height:1.1;
+    }
+    .title p{
+      margin:0;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.45;
+      max-width:780px;
+    }
+
+    .chips{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .chip{
+      padding:10px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.04);
+      color:var(--muted);
+      font-size:12px;
+      display:flex;gap:8px;align-items:center;
+      box-shadow:0 8px 25px rgba(0,0,0,.18);
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:50%}
+    .dot.blue{background:var(--blue)}
+    .dot.purple{background:var(--purple)}
+    .dot.cyan{background:var(--cyan)}
+
+    /* Layout */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:16px;
+      margin-top:14px;
+    }
+    @media (max-width: 980px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .col{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border-radius:var(--r);
+      padding:18px;
+      box-shadow:var(--shadow);
+      position:relative;
+      overflow:hidden;
+    }
+    .col:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(400px 200px at 20% 0%, rgba(94,169,255,.18), transparent 70%),
+                  radial-gradient(420px 220px at 85% 20%, rgba(180,140,255,.14), transparent 70%);
+      pointer-events:none;
+      filter: blur(0px);
+      opacity:.85;
+    }
+    .col > *{position:relative; z-index:1}
+
+    .colhead{
+      display:flex; gap:12px; align-items:flex-start; justify-content:space-between; flex-wrap:wrap;
+      margin-bottom:14px;
+    }
+    .badge{
+      display:inline-flex;gap:8px;align-items:center;
+      border:1px solid var(--line2);
+      background:rgba(255,255,255,.05);
+      border-radius:999px;
+      padding:8px 10px;
+      font-size:12px;
+      color:var(--muted);
+    }
+    .badge strong{color:var(--text); font-weight:700}
+    .label{
+      font-size:16px;
+      font-weight:800;
+      letter-spacing:.01em;
+      margin:0;
+    }
+    .sub{
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.45;
+      max-width:520px;
+    }
+
+    /* Diagram */
+    .diagram{
+      margin-top:6px;
+      border-radius:var(--r2);
+      border:1px solid var(--line);
+      background:rgba(10,14,28,.55);
+      padding:16px;
+      box-shadow:var(--shadow2);
+      position:relative;
+    }
+
+    .nodes{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap:12px;
+      position:relative;
+      padding-bottom:8px;
+    }
+
+    .node{
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:linear-gradient(180deg, rgba(16,26,58,.95), rgba(15,23,50,.82));
+      padding:14px 14px 12px;
+      position:relative;
+      overflow:hidden;
+    }
+    .node:before{
+      content:"";
+      position:absolute; inset:-2px;
+      background: radial-gradient(320px 180px at 15% 10%, rgba(94,169,255,.13), transparent 60%),
+                  radial-gradient(280px 160px at 85% 20%, rgba(69,230,255,.10), transparent 60%);
+      pointer-events:none;
+      opacity:.9;
+    }
+    .node > *{position:relative; z-index:1}
+
+    .node .top{
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      margin-bottom:8px;
+    }
+    .node h3{
+      margin:0;
+      font-size:14px;
+      letter-spacing:.02em;
+    }
+    .role{
+      font-family:var(--mono);
+      font-size:11px;
+      color:rgba(255,255,255,.72);
+      padding:6px 8px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      white-space:nowrap;
+    }
+
+    .bullets{
+      margin:0;
+      padding-left:18px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.55;
+    }
+    .bullets li{margin:6px 0}
+
+    /* Connector arrows (pure CSS) */
+    .flow{
+      margin:12px 0 4px;
+      display:grid;
+      gap:10px;
+    }
+    .arrowRow{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      justify-content:space-between;
+      flex-wrap:wrap;
+    }
+    .pill{
+      border:1px dashed rgba(255,255,255,.22);
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      border-radius:999px;
+      padding:10px 12px;
+      font-size:12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      width:100%;
+    }
+    .pill .k{color:var(--text); font-weight:700}
+    .pill .sep{
+      width:1px;height:14px;background:rgba(255,255,255,.18);
+      margin:0 2px;
+    }
+
+    .arrow{
+      height:12px;
+      width:100%;
+      position:relative;
+      margin:2px 0 0;
+      opacity:.95;
+    }
+    .arrow:before{
+      content:"";
+      position:absolute; left:0; right:0; top:50%;
+      height:2px;
+      background:linear-gradient(90deg, rgba(94,169,255,.0), rgba(94,169,255,.8), rgba(180,140,255,.8), rgba(180,140,255,.0));
+      transform:translateY(-50%);
+    }
+    .arrow:after{
+      content:"";
+      position:absolute; right:10px; top:50%;
+      width:10px;height:10px;
+      border-right:2px solid rgba(180,140,255,.85);
+      border-bottom:2px solid rgba(180,140,255,.85);
+      transform:translateY(-50%) rotate(-45deg);
+    }
+
+    /* Comparison strip */
+    .compare{
+      margin-top:16px;
+      border:1px solid var(--line);
+      border-radius:var(--r);
+      background:rgba(255,255,255,.03);
+      padding:16px;
+      box-shadow:var(--shadow2);
+    }
+    .compare h2{
+      margin:0 0 10px;
+      font-size:16px;
+      letter-spacing:.02em;
+    }
+    .table{
+      display:grid;
+      grid-template-columns: 190px 1fr 1fr;
+      border:1px solid rgba(255,255,255,.10);
+      border-radius:14px;
+      overflow:hidden;
+    }
+    @media (max-width: 980px){
+      .table{grid-template-columns:1fr}
+    }
+    .cell{
+      padding:12px 12px;
+      border-top:1px solid rgba(255,255,255,.08);
+      border-left:1px solid rgba(255,255,255,.08);
+      background:rgba(16,26,58,.55);
+      font-size:13px;
+      line-height:1.55;
+      color:var(--muted);
+    }
+    .cell.head{
+      background:rgba(255,255,255,.04);
+      color:rgba(255,255,255,.85);
+      font-weight:800;
+      border-top:none;
+    }
+    .cell.rowhead{
+      color:rgba(255,255,255,.86);
+      font-weight:800;
+      background:rgba(255,255,255,.02);
+    }
+    .cell:first-child{border-left:none}
+    .table .cell:nth-child(-n+3){border-top:none}
+
+    .tag{
+      display:inline-flex;gap:6px;align-items:center;
+      padding:6px 8px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.03);
+      font-size:11px;
+      color:rgba(255,255,255,.8);
+      margin-right:6px;
+      white-space:nowrap;
+    }
+    .tag.good{border-color:rgba(57,217,138,.35); background:rgba(57,217,138,.08)}
+    .tag.warn{border-color:rgba(255,204,102,.35); background:rgba(255,204,102,.08)}
+    .tag.bad{border-color:rgba(255,107,107,.35); background:rgba(255,107,107,.08)}
+
+    /* Bottom key message */
+    .cta{
+      margin-top:16px;
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:var(--r);
+      background:linear-gradient(180deg, rgba(94,169,255,.10), rgba(180,140,255,.06));
+      padding:16px;
+      box-shadow:var(--shadow2);
+      display:grid;
+      gap:10px;
+    }
+    .cta h3{margin:0;font-size:15px}
+    .cta p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+    .cta .points{
+      display:grid;gap:10px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 980px){ .cta .points{grid-template-columns:1fr} }
+    .mini{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      padding:12px;
+      background:rgba(10,14,28,.35);
+    }
+    .mini b{color:rgba(255,255,255,.92)}
+    .mini ul{margin:8px 0 0; padding-left:18px; color:var(--muted); font-size:13px; line-height:1.55}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>RPOの「今の派遣紹介モデル」 vs 「単発請求モデル」図解</h1>
+        <p>
+          プラットフォーマーが“管理・保証”で価値を出すモデルと、<br/>
+          高単価RPO事業者と“成果・評価”で回す単発請求モデルを、直感で比較できるように整理。
+        </p>
+      </div>
+      <div class="chips" aria-label="legend">
+        <div class="chip"><span class="dot blue"></span> 企業側（発注者）</div>
+        <div class="chip"><span class="dot purple"></span> プラットフォーマー</div>
+        <div class="chip"><span class="dot cyan"></span> RPO事業者 / 実働者</div>
+      </div>
+    </header>
+
+    <section class="grid">
+      <!-- LEFT: current platform /派遣紹介的 -->
+      <article class="col">
+        <div class="colhead">
+          <div>
+            <p class="label">① 現在の派遣紹介的なモデル</p>
+            <p class="sub">
+              「副業人材の稼働ブレ」を前提に、プラットフォーマーが最後にマネジメントして“安心”を提供。<br/>
+              その対価として手数料（例：30%）が乗る。
+            </p>
+          </div>
+          <div class="badge" title="キーファクト">
+            <strong>手数料</strong><span>≈ 30%</span><span style="opacity:.7">/ 管理コスト込み</span>
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="nodes">
+            <div class="node">
+              <div class="top">
+                <h3>企業（発注者）</h3>
+                <span class="role">Buyer / 支援を受けたい</span>
+              </div>
+              <ul class="bullets">
+                <li>複数のRPOが入る場合でも「契約・請求」を一括で任せたい</li>
+                <li>実働の品質ブレが怖いので「最終的に管理してくれる人」が欲しい</li>
+              </ul>
+            </div>
+
+            <div class="arrow" aria-hidden="true"></div>
+            <div class="pill">
+              <span class="k">契約・請求</span><span class="sep"></span>
+              <span>企業 ↔ プラットフォーマーで一本化</span>
+              <span class="sep"></span>
+              <span><span class="tag good">企業が楽</span> <span class="tag warn">管理コスト増</span></span>
+            </div>
+
+            <div class="node">
+              <div class="top">
+                <h3>プラットフォーマー（統括・管理）</h3>
+                <span class="role">Platform / PM・品質担保</span>
+              </div>
+              <ul class="bullets">
+                <li>副業参画は「本業がある → 稼働が疎か」になりがち</li>
+                <li>最後に管理してくれる安心感（品質・進捗・連絡）</li>
+                <li>その分、管理コストが載りやすい（例：30%）</li>
+              </ul>
+            </div>
+
+            <div class="arrow" aria-hidden="true"></div>
+            <div class="pill">
+              <span class="k">業務委託</span><span class="sep"></span>
+              <span>プラットフォーマー → 複数RPOへアサイン</span>
+              <span class="sep"></span>
+              <span><span class="tag warn">稼働管理が必要</span> <span class="tag bad">報酬目減り</span></span>
+            </div>
+
+            <div class="node">
+              <div class="top">
+                <h3>RPO事業者（実働）</h3>
+                <span class="role">Operators / 実行者</span>
+              </div>
+              <ul class="bullets">
+                <li>ちゃんと稼働する人ほど「手数料30%」が痛い</li>
+                <li>一方で、高単価案件だと「高単価×30%」でPFも売上が立ちサステナブルになりやすい</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow" aria-label="このモデルの要点">
+          <div class="pill">
+            <span class="k">このモデルの強み</span><span class="sep"></span>
+            <span>企業が「複数RPOの契約・請求」を一括で丸投げできる</span>
+          </div>
+          <div class="pill">
+            <span class="k">このモデルの弱み</span><span class="sep"></span>
+            <span>実働が強い人ほど「中抜き」に不満 → 供給の質が上がりにくいリスク</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- RIGHT: single invoice model -->
+      <article class="col">
+        <div class="colhead">
+          <div>
+            <p class="label">② 今回の「単発請求モデル」</p>
+            <p class="sub">
+              管理の“中抜き”を薄くし、プロアクティブに動けるRPOと相性が良い。<br/>
+              代わりに品質担保は「評価経済（星）」などの仕組みで補強していく。
+            </p>
+          </div>
+          <div class="badge" title="設計思想">
+            <strong>品質担保</strong><span>＝ 評価・透明性</span>
+          </div>
+        </div>
+
+        <div class="diagram">
+          <div class="nodes">
+            <div class="node">
+              <div class="top">
+                <h3>企業（発注者）</h3>
+                <span class="role">Buyer / 支援を選ぶ</span>
+              </div>
+              <ul class="bullets">
+                <li>「誰に頼むか」を明確に選ぶ（高単価・高品質を取りに行く）</li>
+                <li>ただし中小企業には高単価がキツい可能性（支払い耐性が論点）</li>
+              </ul>
+            </div>
+
+            <div class="arrow" aria-hidden="true"></div>
+            <div class="pill">
+              <span class="k">契約・請求</span><span class="sep"></span>
+              <span>企業 ↔ RPOでダイレクト（単発）</span>
+              <span class="sep"></span>
+              <span><span class="tag good">報酬効率↑</span> <span class="tag warn">企業の目利き必要</span></span>
+            </div>
+
+            <div class="node">
+              <div class="top">
+                <h3>RPO事業者（高単価・プロ寄り）</h3>
+                <span class="role">Pro / 自走・提案</span>
+              </div>
+              <ul class="bullets">
+                <li>プロアクティブに動ける層と相性が良い（成果で勝負）</li>
+                <li>単価が高いケースが多く、中小企業が払えるかは別問題</li>
+              </ul>
+            </div>
+
+            <div class="arrow" aria-hidden="true"></div>
+            <div class="pill">
+              <span class="k">品質担保の仕組み</span><span class="sep"></span>
+              <span>食べログ的「星評価」→ 信頼の可視化へ</span>
+              <span class="sep"></span>
+              <span><span class="tag good">透明性</span> <span class="tag warn">設計が肝</span></span>
+            </div>
+
+            <div class="node">
+              <div class="top">
+                <h3>成長株のRPO（独立したて）</h3>
+                <span class="role">Rising / 実績づくり</span>
+              </div>
+              <ul class="bullets">
+                <li>案件獲得したいので「そこそこの単価」で高パフォーマンスの可能性</li>
+                <li>評価が貯まるほど指名が増える（星が資産化）</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="flow" aria-label="このモデルの要点">
+          <div class="pill">
+            <span class="k">このモデルの強み</span><span class="sep"></span>
+            <span>稼働できる人に“報酬が残る” → 良い供給が集まりやすい</span>
+          </div>
+          <div class="pill">
+            <span class="k">このモデルの弱み</span><span class="sep"></span>
+            <span>品質担保の代替が必要（評価・レビュー・基準・不正対策）</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="compare">
+      <h2>一枚でわかる「差分」マトリクス</h2>
+      <div class="table" role="table" aria-label="comparison">
+        <div class="cell head" role="columnheader"></div>
+        <div class="cell head" role="columnheader">① 派遣紹介的モデル（PF統括）</div>
+        <div class="cell head" role="columnheader">② 単発請求モデル（直契約）</div>
+
+        <div class="cell rowhead" role="rowheader">誰が安心を担保する？</div>
+        <div class="cell">
+          <span class="tag good">PFが管理</span>
+          <span class="tag warn">管理コスト</span><br/>
+          プラットフォーマーが進捗・品質・連絡を統括し、企業側の不安を吸収。
+        </div>
+        <div class="cell">
+          <span class="tag warn">評価で担保</span>
+          <span class="tag good">透明性</span><br/>
+          星評価・レビュー・実績・標準プロセスで「選別」し、安心を再構築。
+        </div>
+
+        <div class="cell rowhead" role="rowheader">お金の構造</div>
+        <div class="cell">
+          <span class="tag warn">手数料30%</span><br/>
+          管理コストの分だけ中抜きが発生。稼働強者ほど不満になりやすい。
+        </div>
+        <div class="cell">
+          <span class="tag good">報酬効率↑</span><br/>
+          中抜きが薄い（or無し）。良い実働者が集まりやすい設計が可能。
+        </div>
+
+        <div class="cell rowhead" role="rowheader">企業側のラクさ</div>
+        <div class="cell">
+          <span class="tag good">請求一本化</span><br/>
+          1社に複数RPOが入っても、契約・請求・管理はPFが一括。
+        </div>
+        <div class="cell">
+          <span class="tag warn">目利き必要</span><br/>
+          直接契約なので、選定・要件整理・品質の見極めの負荷が増えがち。
+        </div>
+
+        <div class="cell rowhead" role="rowheader">向いている供給</div>
+        <div class="cell">
+          <span class="tag warn">副業多め</span><br/>
+          稼働ブレが出やすい前提で、PFが最後に締めることで成立しやすい。
+        </div>
+        <div class="cell">
+          <span class="tag good">プロ/成長株</span><br/>
+          自走できる高単価RPO or 独立初期の成長株（実績づくり）と好相性。
+        </div>
+      </div>
+    </section>
+
+    <section class="cta">
+      <h3>設計の核心（直感まとめ）</h3>
+      <p>
+        ①は「企業のラクさ・安心」をPFが買い取り、その代金が“手数料（例：30%）”として乗るモデル。<br/>
+        ②は「中抜きを薄くして供給の質を上げる」代わりに、“評価経済”で安心を作り直すモデル。
+      </p>
+      <div class="points">
+        <div class="mini">
+          <b>②を強くするキーパーツ</b>
+          <ul>
+            <li>星評価（レビュー）＋実績（支援社数/継続率/成果）</li>
+            <li>不正対策（レビューの信頼性、なりすまし、相互評価）</li>
+            <li>最低品質ライン（テンプレ運用・SLA・報告フォーマット）</li>
+          </ul>
+        </div>
+        <div class="mini">
+          <b>②で中小企業に刺さる工夫</b>
+          <ul>
+            <li>高単価プロだけでなく「成長株」の層を厚くする（単価×品質のバランス帯）</li>
+            <li>単発でも“期待値のズレ”を減らす：事前スコープ定義テンプレ</li>
+            <li>小さく開始できる「お試しパッケージ（2週間/10時間等）」</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>
